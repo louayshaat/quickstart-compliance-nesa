@@ -26,5 +26,9 @@
     {
         "ParameterKey":"QSS3BucketName",
         "ParameterValue":"$[taskcat_autobucket]"
+    },
+    {
+        "ParameterKey":"QSS3BucketRegion",
+        "ParameterValue":"!Ref QSS3BucketRegion"
     }
 ]
