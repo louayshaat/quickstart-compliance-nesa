@@ -5,3 +5,4 @@
 [submodule "submodules/quickstart-amazon-aurora-mysql"]
 	path = submodules/quickstart-amazon-aurora-mysql
 	url = https://github.com/aws-quickstart/quickstart-amazon-aurora-mysql.git
+	branch = master
