@@ -236,35 +236,35 @@ Mappings:
     ap-northeast-1:
       AMZNLINUX2HVM: ami-0a1c2ec61571737db
     ap-northeast-2:
-      AMZNLINUX2HVM: ami-0ecd78c22823e02ef
+      AMZNLINUX2HVM: ami-01af223aa7f274198
     ap-south-1:
-      AMZNLINUX2HVM: ami-05695932c5299858a
+      AMZNLINUX2HVM: ami-0447a12f28fddb066
     ap-southeast-1:
-      AMZNLINUX2HVM: ami-043afc2b8b6cfba5c
+      AMZNLINUX2HVM: ami-0615132a0f36d24f4
     ap-southeast-2:
-      AMZNLINUX2HVM: ami-01393ce9a3ca55d67
+      AMZNLINUX2HVM: ami-088ff0e3bde7b3fdf
     ca-central-1:
-      AMZNLINUX2HVM: ami-0fa94ecf2fef3420b
+      AMZNLINUX2HVM: ami-0f75c2980c6a5851d
     eu-central-1:
-      AMZNLINUX2HVM: ami-0ba441bdd9e494102
+      AMZNLINUX2HVM: ami-0a02ee601d742e89f
     eu-west-1:
-      AMZNLINUX2HVM: ami-0e61341fa75fcaa18
+      AMZNLINUX2HVM: ami-0ea3405d2d2522162
     eu-west-2:
-      AMZNLINUX2HVM: ami-050b8344d77081f4b
+      AMZNLINUX2HVM: ami-032598fcc7e9d1c7a
     sa-east-1:
-      AMZNLINUX2HVM: ami-05b7dbc290217250d
+      AMZNLINUX2HVM: ami-0477a95397a9154b3
     us-east-1:
       AMZNLINUX2HVM: ami-09d95fab7fff3776c
     us-east-2:
-      AMZNLINUX2HVM: ami-0998bf58313ab53da
+      AMZNLINUX2HVM: ami-026dea5602e368e96
     us-gov-west-1:
-      AMZNLINUX2HVM: ami-e9a9d388
+      AMZNLINUX2HVM: ami-38be8259
     us-gov-east-1:
-      AMZNLINUX2HVM: ami-2093423904
+      AMZNLINUX2HVM: ami-83e30cf2
     us-west-1:
       AMZNLINUX2HVM: ami-04e59c05167ea7bd5
     us-west-2:
-      AMZNLINUX2HVM: ami-079f731edfe27c29c
+      AMZNLINUX2HVM: ami-0e34e7b9ca0ace12d
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
   GovCloudCondition: !Or [!Equals [!Ref "AWS::Region", us-gov-west-1], !Equals [!Ref "AWS::Region", us-gov-east-1]]
@@ -551,48 +551,49 @@ Resources:
       SecurityGroups:
         - !Ref SecurityGroupWebInstance
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          yum update -y
+        !Base64
+          Fn::Sub: |
+            #!/bin/bash
+            yum update -y
 
-          EC2_INSTANCE_ID=$(curl -s http://instance-data/latest/meta-data/instance-id)
+            EC2_INSTANCE_ID=$(curl -s http://instance-data/latest/meta-data/instance-id)
 
-          ######################################################################
-          # Volume /dev/sdh (which will get created as /dev/xvdh on Amazon Linux)
+            ######################################################################
+            # Volume /dev/sdh (which will get created as /dev/xvdh on Amazon Linux)
 
-          DATA_STATE="unknown"
-          until [ "${!DATA_STATE}" == "attached" ]; do
-            DATA_STATE=$(aws ec2 describe-volumes \
-            --region ${AWS::Region} \
-            --filters \
-                  Name=attachment.instance-id,Values=${!EC2_INSTANCE_ID} \
-                  Name=attachment.device,Values=/dev/sdh \
-            --query Volumes[].Attachments[].State \
-            --output text)
+            DATA_STATE="unknown"
+            until [ "${!DATA_STATE}" == "attached" ]; do
+              DATA_STATE=$(aws ec2 describe-volumes \
+              --region ${AWS::Region} \
+              --filters \
+                    Name=attachment.instance-id,Values=${!EC2_INSTANCE_ID} \
+                    Name=attachment.device,Values=/dev/sdh \
+              --query Volumes[].Attachments[].State \
+              --output text)
 
+              sleep 5
+            done
+
+            # Format /dev/xvdh if it does not contain a partition yet
+            if [ "$(file -b -s /dev/xvdh)" == "data" ]; then
+              mkfs -t ext4 /dev/xvdh
+            fi
+
+            mkdir -p /data
+            mount /dev/xvdh /data
+
+            # Persist the volume in /etc/fstab so it gets mounted again
+            echo '/dev/xvdh /data ext4 defaults,nofail 0 2' >> /etc/fstab
+
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AutoScalingConfigWeb --region ${AWS::Region}
+
+            ## Nginx setup
             sleep 5
-          done
-
-          # Format /dev/xvdh if it does not contain a partition yet
-          if [ "$(file -b -s /dev/xvdh)" == "data" ]; then
-            mkfs -t ext4 /dev/xvdh
-          fi
-
-          mkdir -p /data
-          mount /dev/xvdh /data
-
-          # Persist the volume in /etc/fstab so it gets mounted again
-          echo '/dev/xvdh /data ext4 defaults,nofail 0 2' >> /etc/fstab
-
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource AutoScalingConfigWeb --region ${AWS::Region}
-
-          ## Nginx setup
-          sleep 5
-          cp /tmp/nginx/default.conf /etc/nginx/conf.d/default.conf
-          service nginx stop
-          sed -i '/default_server;/d' /etc/nginx/nginx.conf
-          sleep 10
-          service nginx restart
+            cp /tmp/nginx/default.conf /etc/nginx/conf.d/default.conf
+            service nginx stop
+            sed -i '/default_server;/d' /etc/nginx/nginx.conf
+            sleep 10
+            service nginx restart
   WebTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -807,7 +808,8 @@ Resources:
       SecurityGroups:
         - !Ref SecurityGroupAppInstance
       UserData:
-        Fn::Base64: |
+        !Base64
+          Fn::Sub: |
             #!/bin/bash -x
 
             yum update -y
