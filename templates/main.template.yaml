@@ -268,7 +268,7 @@ Resources:
   IAMPasswordPolicyResource:
     Type: "AWS::Lambda::Function"
     Properties:
-      Runtime: python2.7
+      Runtime: python3.7
       Handler: index.lambda_handler
       MemorySize: 128
       Timeout: 30

@@ -203,10 +203,6 @@ Conditions:
   TestAccount: !Equals [!Ref TestAccount, ""]
   DevAccount: !Equals [!Ref DevAccount, ""]
   DeployConfigRule: !Equals [ !Ref DeployConfigRule, Yes Config ]
-  GovCloudCondition:
-    !Equals
-    - !Ref AWS::Region
-    - us-gov-west-1
 Resources:
   ConfigTemplate:
     Condition: DeployConfigRule
@@ -807,7 +803,7 @@ Resources:
           Principal:
             Service: cloudtrail.amazonaws.com
           Action: s3:GetBucketAcl
-          Resource: !Sub arn:aws:s3:::${BucketName}
+          Resource: !Sub arn:${AWS::Partition}:s3:::${BucketName}
         - Effect: Allow
           Principal:
             Service: cloudtrail.amazonaws.com
@@ -815,14 +811,14 @@ Resources:
           Resource:
               - Fn::Join:
                 - ''
-                - - 'arn:aws:s3:::'
+                - - !Sub 'arn:${AWS::Partition}:s3:::'
                   - Ref: BucketName
                   - "/AWSLogs/"
                   - Ref: AWS::AccountId
                   - "/*"
               - Fn::Join:
                 - ''
-                - - 'arn:aws:s3:::'
+                - - !Sub 'arn:${AWS::Partition}:s3:::'
                   - Ref: BucketName
                   - "/AWSLogs/"
                   # Not sure if this is the best way, but use current account  if not additional accounts not specified.
@@ -830,14 +826,14 @@ Resources:
                   - "/*"
               - Fn::Join:
                 - ''
-                - - 'arn:aws:s3:::'
+                - - !Sub 'arn:${AWS::Partition}:s3:::'
                   - Ref: BucketName
                   - "/AWSLogs/"
                   - !If [TestAccount, !Ref "AWS::AccountId", !Ref TestAccount]
                   - "/*"
               - Fn::Join:
                 - ''
-                - - 'arn:aws:s3:::'
+                - - !Sub 'arn:${AWS::Partition}:s3:::'
                   - Ref: BucketName
                   - "/AWSLogs/"
                   - !If [DevAccount, !Ref "AWS::AccountId", !Ref DevAccount]
@@ -920,16 +916,15 @@ Resources:
               - logs:CreateLogGroup
               - logs:CreateLogStream
               - logs:PutLogEvents
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
             - Effect: Allow
               Action:
               - es:ESHttpPost
-              Resource: !Sub arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/*
+              Resource: !Sub arn:${AWS::Partition}:es:${AWS::Region}:${AWS::AccountId}:domain/*
             - Effect: Allow
               Action:
               - sts:AssumeRole
               Resource: !Sub ${LoggingMasterRole.Arn}
-
   LogStreamer:
     Type: AWS::Lambda::Function
     Properties:
@@ -940,8 +935,8 @@ Resources:
       Handler: index.handler
       Role: !Sub ${LogStreamerRole.Arn}
       Code:
-        S3Bucket: !Join ["-",["sourcecode", "loggingindex", "s3bucket", Ref: "AWS::Region"]]
-        S3Key: "index.zip"
+        S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+        S3Key: !Sub ${QSS3KeyPrefix}media/logstreamer/index.zip
       Runtime: nodejs10.x
       Timeout: 300
   LogStreamerInvokePermission:
