@@ -165,7 +165,7 @@ Resources:
       Role: !Sub ${LogStreamerRole.Arn}
       Code:
         S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-        S3Key: !Sub ${QSS3KeyPrefix}media/cfindexscripts2/index.zip
+        S3Key: !Sub ${QSS3KeyPrefix}functions/packages/cfindexscripts2/index.zip
       Runtime: nodejs10.x
       Timeout: 300
 
