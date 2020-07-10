@@ -1,6 +1,6 @@
 # Centralized Logging Solution
 AWSTemplateFormatVersion: 2010-09-09
-Description: (SO0009) - AWS Centralized Logging Solution, primary template (qs-1qtdcru0q)
+Description: (SO0009) - AWS Centralized Logging Solution, primary template (qs-1qtdd1c9p)
 Parameters:
   # Name for ES Domain
   DOMAINNAME:
