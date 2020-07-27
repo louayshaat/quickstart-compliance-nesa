@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
-Description: Provides RDS deployment ontop of main template
+Description: Provides RDS deployment ontop of main template (qs-1qtdd1c8m)
 Metadata:
   Stack:
     Value: 3

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Provides nesting for required stacks to deploy a baseline architecure to support PCI compliance.
+Description: Provides nesting for required stacks to deploy a baseline architecure to support PCI compliance. (qs-1qtdd1c6i)
 Metadata:
   Stack:
     Value: 0
@@ -270,7 +270,7 @@ Resources:
   IAMPasswordPolicyResource:
     Type: "AWS::Lambda::Function"
     Properties:
-      Runtime: python2.7
+      Runtime: python3.7
       Handler: index.lambda_handler
       MemorySize: 128
       Timeout: 30

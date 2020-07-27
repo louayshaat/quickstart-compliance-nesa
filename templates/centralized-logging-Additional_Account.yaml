@@ -6,7 +6,7 @@
 # author: aws-solutions-builder@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: (SO0009s) - AWS Centralized Logging Solution, spoke accounts template
+Description: (SO0009s) - AWS Centralized Logging Solution, spoke accounts template (qs-1qtdd1cae)
 
 Parameters:
   # Name for ES Domain
@@ -39,6 +39,33 @@ Parameters:
     Description: S3 bucket for central log storage, created in the primary log account.
     Type: String
 
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, periods (.), and hyphens (-). It cannot start or
+      end with a hyphen (-). If you are unsure, do not change this value.
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-). If you are unsure, do not change this value.
+    Type: String
+  √:
+    Default: 'us-east-1'
+    Description: 'The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is hosted. When using your own bucket, you must specify this value.'
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: '^[0-9a-zA-Z-/]*$'
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Default: quickstart-*************************/
+    Description:
+      S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
+
+
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -54,6 +81,14 @@ Metadata:
       Parameters:
       - S3BucketName
 
+    - Label:
+        default: S3 Bucket for Media Location (Should be Quick Start Bucket)
+        Parameters:
+        - QSS3BucketName
+        - QSS3BucketRegion
+        - QSS3KeyPrefix
+
+
     ParameterLabels:
       ESDomain:
         default: Amazon ES endpoint
@@ -65,6 +100,12 @@ Metadata:
         default: Central S3 log bucket name
       CentralLogAcct:
         default: Central log account ID
+      QSS3BucketName:
+        default: Quick Start S3 Bucket Name
+      QSS3BucketRegion:
+        default: Quick Start S3 bucket region
+      QSS3KeyPrefix:
+        default: Quick Start S3 Key Prefix
 
 Mappings:
   InstanceMap:
@@ -75,7 +116,8 @@ Mappings:
 #    General:
 #      S3Bucket: "solutions"
 #      KeyPrefix: "centralized-logging/v3.0.0"
-
+Conditions:
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
 Resources:
   #
   # Log Streamer and Demo resources
@@ -102,11 +144,11 @@ Resources:
               - logs:CreateLogGroup
               - logs:CreateLogStream
               - logs:PutLogEvents
-              Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
             - Effect: Allow
               Action:
               - es:ESHttpPost
-              Resource: !Sub arn:aws:es:${AWS::Region}:${CentralLogAcct}:domain/*
+              Resource: !Sub arn:${AWS::Partition}:es:${AWS::Region}:${CentralLogAcct}:domain/*
             - Effect: Allow
               Action:
               - sts:AssumeRole
@@ -122,8 +164,8 @@ Resources:
       Handler: index.handler
       Role: !Sub ${LogStreamerRole.Arn}
       Code:
-        S3Bucket: cfindexscripts2
-        S3Key: "index.zip"
+        S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+        S3Key: !Sub ${QSS3KeyPrefix}functions/packages/cfindexscripts2/index.zip
       Runtime: nodejs10.x
       Timeout: 300
 
@@ -160,7 +202,7 @@ Resources:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - logs:PutLogEvents
-            Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+            Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
 
   SolutionHelper:
     Type: AWS::Lambda::Function
@@ -171,7 +213,7 @@ Resources:
       Code:
        S3Bucket: !Sub solutions-${AWS::Region}
        S3Key: library/solution-helper/v3/solution-helper.zip
-      Runtime: python2.7
+      Runtime: python3.7
       Timeout: 300
 
   CreateUniqueID:

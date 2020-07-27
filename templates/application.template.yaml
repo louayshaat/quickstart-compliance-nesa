@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Provides nesting for required stacks to deploy a full sample web application
   with reverse proxy, ELBs, IAM, and other resources (for demonstration/POC/testing)
-  QS(0018)
+  QS(0018) (qs-1qtdd1c8e)
 Metadata:
   Stack:
     Value: 3
@@ -36,7 +36,7 @@ Metadata:
         default: Logging configuration
       Parameters:
         - CentralLogBucket
-        - WAFLogging
+        - WAFlogging
     - Label:
         default: Amazon Elasticsearch configuration
       Parameters:
@@ -267,7 +267,6 @@ Mappings:
       AMZNLINUX2HVM: ami-0e34e7b9ca0ace12d
 Conditions:
   UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
-  GovCloudCondition: !Or [!Equals [!Ref "AWS::Region", us-gov-west-1], !Equals [!Ref "AWS::Region", us-gov-east-1]]
 Resources:
   SecurityGroupWeb:
     Type: AWS::EC2::SecurityGroup
@@ -370,14 +369,7 @@ Resources:
             Action: s3:*
             Effect: Deny
             Principal: '*'
-            Resource:
-              !Sub
-              - arn:${Partition}:s3:::${WebContentBucket}
-              - Partition:
-                  !If
-                  - GovCloudCondition
-                  - aws-us-gov
-                  - aws
+            Resource: !Sub arn:${AWS::Partition}:s3:::${WebContentBucket}
             Condition:
               Bool:
                 aws:SecureTransport: 'false'
@@ -385,14 +377,7 @@ Resources:
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
-            Resource:
-              !Sub
-              - arn:${Partition}:s3:::${WebContentBucket}/*
-              - Partition:
-                  !If
-                  - GovCloudCondition
-                  - aws-us-gov
-                  - aws
+            Resource: !Sub arn:${AWS::Partition}:s3:::${WebContentBucket}/*
             Condition:
               StringNotEquals:
                 s3:x-amz-server-side-encryption: AES256
