@@ -357,10 +357,11 @@ Resources:
         Subnet1ID: !Ref DBPrivateSubnetA
         Subnet2ID: !Ref DBPrivateSubnetB
         VPCID: !Ref ProductionVPC
+        DBEngineMode: 'provisioned'
         DBName: !Ref DBName
         DBMasterUsername: !Ref DBUser
         DBMasterUserPassword: !Ref DBPassword
-        RotateDBPassword: 'true'
+        RotateDBPassword: 'false'
         CustomDBSecurityGroup: !Ref SecurityGroupRDS
   CopyZipsTemplate:
     Type: AWS::CloudFormation::Stack
