@@ -20,7 +20,7 @@ tests:
     parameters:
       AvailabilityZoneA: $[taskcat_getsingleaz_1]
       AvailabilityZoneB: $[taskcat_getsingleaz_2]
-      DBPassword: 'Tfdbttfh1bttb!'
+      DBPassword: P!$[taskcat_genpass_8A]
       EC2KeyPair: $[taskcat_getkeypair]
       EC2KeyPairBastion: $[taskcat_getkeypair]
       QSS3BucketName: $[taskcat_autobucket]
