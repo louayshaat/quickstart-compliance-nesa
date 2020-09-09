@@ -644,6 +644,15 @@ Resources:
                 Action:
                   - ec2:DescribeVolumes
                 Resource: "*"
+        - PolicyName: RDSAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Sid: AccessRDS
+                Effect: Allow
+                Action:
+                  - rds:*
+                Resource: "*"        
   AppInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -848,10 +857,10 @@ Resources:
             ######################################################################
 
             # Download the landing page.
-            sudo wget https://cloudformationlctemplates.s3.amazonaws.com/landing.html -O $LANDING_PAGE
+            sudo wget https://${QSS3BucketName}/${QSS3KeyPrefix}assets/landing/landing.html -O $LANDING_PAGE
 
             # Replace relative image links with links to the production S3 source.
-            sudo sed -i 's|images|https://cloudformationlctemplates.s3.amazonaws.com/images|g' $LANDING_PAGE
+            sudo sed -i 's|images|https://${QSS3BucketName}/${QSS3KeyPrefix}assets/landing/images|g' $LANDING_PAGE
 
             # Inject the landing page branding label.
             sudo sed -i "s|{compliance-body}|$COMPLIANCE_BODY_LABEL|g" $LANDING_PAGE
@@ -860,7 +869,7 @@ Resources:
             sudo sed -i "s|{compliance-body-survey-link}|$COMPLIANCE_SURVEY_LINK|g" $LANDING_PAGE
 
             # Inject the security control matrix file location.
-            sudo sed -i "s|{compliance-body-matrix}|https://cloudformationlctemplates.s3.amazonaws.com/$COMPLIANCE_MATRIX_FILENAME|g" $LANDING_PAGE
+            sudo sed -i "s|{compliance-body-matrix}|https://${QSS3BucketName}/${QSS3KeyPrefix}assets/$COMPLIANCE_MATRIX_FILENAME|g" $LANDING_PAGE
   AppTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
