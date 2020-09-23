@@ -212,7 +212,7 @@ Resources:
       Description: EFS Backup - This function is a CloudFormation custom lambda resource that generates UUID for each deployment.
       Code:
        S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-       S3Key: !Sub ${QSS3KeyPrefix}functions/packages/solution-helper/solution-helper.zip
+       S3Key: !Sub ${QSS3KeyPrefix}functions/packages/solution-helper/v3/solution-helper/solution-helper.zip
       Runtime: python2.7
       Timeout: 300
 
