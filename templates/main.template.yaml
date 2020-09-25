@@ -494,28 +494,28 @@ Resources:
     Properties:
       TemplateURL:
         !Sub
-          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/application.template.yaml'
+          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/application-ssl.template.yaml'
           - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       TimeoutInMinutes: 30
       Parameters:
-        EC2KeyPair: !Ref EC2KeyPair
-        ProductionCIDR: 10.100.0.0/16
-        ProductionVPC: !GetAtt ProductionVpcTemplate.Outputs.rVPCProduction
-        DMZSubnetA: !GetAtt ProductionVpcTemplate.Outputs.rDMZSubnetA
-        DMZSubnetB: !GetAtt ProductionVpcTemplate.Outputs.rDMZSubnetB
-        AppPrivateSubnetA: !GetAtt ProductionVpcTemplate.Outputs.rAppPrivateSubnetA
-        AppPrivateSubnetB: !GetAtt ProductionVpcTemplate.Outputs.rAppPrivateSubnetB
-        ManagementCIDR: 10.10.0.0/16
         AvailabilityZoneA: !Ref AvailabilityZoneA
         AvailabilityZoneB: !Ref AvailabilityZoneB
+        pEC2KeyPair: !Ref EC2KeyPair
+        pProductionCIDR: 10.100.0.0/16
+        pManagementCIDR: 10.10.0.0/16
+        pProductionVPC: !GetAtt ProductionVpcTemplate.Outputs.rVPCProduction
+        pDMZSubnetA: !GetAtt ProductionVpcTemplate.Outputs.rDMZSubnetA
+        pDMZSubnetB: !GetAtt ProductionVpcTemplate.Outputs.rDMZSubnetB
+        pAppPrivateSubnetA: !GetAtt ProductionVpcTemplate.Outputs.rAppPrivateSubnetA
+        pAppPrivateSubnetB: !GetAtt ProductionVpcTemplate.Outputs.rAppPrivateSubnetB
         QSS3BucketName: !Ref QSS3BucketName
         QSS3BucketRegion: !Ref QSS3BucketRegion
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        DBHost: !GetAtt DatabaseTemplate.Outputs.AuroraClusterEndpoint
-        DBName: examplewordpress
-        DBUser: !Ref DBUsername
-        DBPassword: !Ref DBPassword
+        pDBHost: !GetAtt DatabaseTemplate.Outputs.AuroraClusterEndpoint
+        pDBName: examplewordpress
+        pDBUser: !Ref DBUsername
+        pDBPassword: !Ref DBPassword
 Outputs:
   TemplateType:
     Value: Standard Architecture
