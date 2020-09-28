@@ -1264,20 +1264,6 @@ Resources:
       Tags:
       - Key: Name
         Value: PostProcessor
-#  WAFtemplateOWASP:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL:
-#        !Sub
-#          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/waf_owasp.template.yaml'
-#          - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-#            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-#      TimeoutInMinutes: 20
-#      Parameters:
-#        pELBWeb: !Ref rELBWeb
-#        pESClusterARN: !Ref ESClusterARN
-#        pCentralLogBucket: !Ref CentralLogBucket
-#        pWAFLogging: !Ref WAFlogging
 Outputs:
   LandingPageURL:
     Value: !Sub https://${rELBWeb.DNSName}/landing.html
