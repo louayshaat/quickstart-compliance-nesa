@@ -1,8 +1,7 @@
 # quickstart-compliance-nesa
-## Standardized Architecture for PCI DSS on the AWS Cloud
+## Standardized Architecture for NESA on the AWS Cloud
 
-This Quick Start sets up an AWS Cloud environment that provides a standardized architecture for NESA compliance. PCI DSS helps ensure that companies maintain a secure environment for storing, processing, and transmitting credit card information. The Quick Start relies on the requirements of PCI DSS version 3.2.1.
-
+This Quick Start sets up an AWS Cloud environment that provides a standardized architecture for NESA compliance. 
 The templates in the Quick Start automatically configure the AWS resources and deploy a multi-tier, Linux-based web application in a few simple steps. The Quick Start includes a main template for initial setup and three optional templates for additional customization.
 
 **Main template**
