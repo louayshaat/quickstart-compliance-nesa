@@ -19,9 +19,3 @@ The templates in the Quick Start automatically configure the AWS resources and d
 **Web application template**
 
 ![Web application template architecture](https://docs.aws.amazon.com/quickstart/latest/compliance-pci/images/web-application-architecture.png)
-
-For architectural details, best practices, step-by-step instructions, and customization options, see the 
-[deployment guide](https://fwd.aws/zmYVY).
-
-To post feedback, submit feature ideas, or report bugs, use the **Issues** section of this GitHub repo.
-If you'd like to submit code for this Quick Start, please review the [AWS Quick Start Contributor's Kit](https://aws-quickstart.github.io/). 
