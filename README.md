@@ -21,10 +21,7 @@ The templates in the Quick Start automatically configure the AWS resources and d
 ![Web application template architecture](https://docs.aws.amazon.com/quickstart/latest/compliance-pci/images/web-application-architecture.png)
 
 ## Installation
-Create a new s3 bucket
-create a net ec2 key pair
-
-Copy the folder "quickstart-compliance-nesa" into that bucket
-
-Navigate to Cloudformation and use the s3 URL for the Cloudformation template
-s3bucket/quickstart-compliance-nesa/templates/main.template.yaml
+- Create a net ec2 key pair
+- Create a new s3 bucket
+- Copy the folder "quickstart-compliance-nesa" into that bucket
+- Navigate to Cloudformation and use the s3 URL for the Cloudformation template "s3bucket/quickstart-compliance-nesa/templates/main.template.yaml"
