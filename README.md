@@ -20,7 +20,7 @@ The templates in the Quick Start automatically configure the AWS resources and d
 
 ![Web application template architecture](https://docs.aws.amazon.com/quickstart/latest/compliance-pci/images/web-application-architecture.png)
 
-***Installation***
+## Installation
 Create a new s3 bucket
 create a net ec2 key pair
 
