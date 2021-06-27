@@ -25,3 +25,5 @@ The templates in the Quick Start automatically configure the AWS resources and d
 - Create a new s3 bucket
 - Copy the folder "quickstart-compliance-nesa" into that bucket
 - Navigate to Cloudformation and use the s3 URL for the Cloudformation template "s3bucket/quickstart-compliance-nesa/templates/main.template.yaml"
+- Update the parameters for QSS3BucketName to the bucket name you created
+- Update the parameters for QSS3KeyPrefix to "quickstart-compliance-nesa"
