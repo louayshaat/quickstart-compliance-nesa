@@ -1,0 +1,289 @@
+# Centralized Logging Solution
+#
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: (SO0009s) - AWS Centralized Logging Solution, spoke accounts template (qs-1qtdd1cae)
+
+Parameters:
+  # Name for ES Domain
+  ESDomain:
+    Description: Amazon ES domain endpoint for centralized logging (remove https://).
+    Type: String
+  # AWS account number of the central logging account (primary log stack)
+  CentralLogAcct:
+    Description: AWS account ID for the central logging account (12 digits).
+    Type: String
+
+  # ES cluster size
+  ClusterSize:
+    Description: Amazon ES cluster size, as deployed in primary account.
+    Type: String
+    Default: Small
+    AllowedValues:
+    - Small
+    - Medium
+    - Large
+    - xLarge
+
+  # Master IAM role for cross account log indexing
+  MasterRole:
+    Description: IAM Role Amazon Resource Name (ARN) for cross-account log indexing.
+    Type: String
+
+  # S3 bucket for central log storage
+  S3BucketName:
+    Description: S3 bucket for central log storage, created in the primary log account.
+    Type: String
+
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-.]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, periods (.), and hyphens (-). It cannot start or
+      end with a hyphen (-). If you are unsure, do not change this value.
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-). If you are unsure, do not change this value.
+    Type: String
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: 'The AWS Region where the Quick Start S3 bucket (QSS3BucketName) is hosted. When using your own bucket, you must specify this value.'
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: '^[0-9a-zA-Z-/]*$'
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Default: quickstart-compliance-nesa/
+    Description:
+      S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
+
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Amazon Elasticsearch configuration
+      Parameters:
+      - ESDomain
+      - CentralLogAcct
+      - MasterRole
+      - ClusterSize
+    - Label:
+        default: Central logging S3 bucket
+      Parameters:
+      - S3BucketName
+
+    - Label:
+        default: S3 Bucket for Media Location (Should be Quick Start Bucket)
+        Parameters:
+        - QSS3BucketName
+        - QSS3BucketRegion
+        - QSS3KeyPrefix
+
+
+    ParameterLabels:
+      ESDomain:
+        default: Amazon ES endpoint
+      ClusterSize:
+        default: Cluster size
+      MasterRole:
+        default: Master account role
+      S3BucketName:
+        default: Central S3 log bucket name
+      CentralLogAcct:
+        default: Central log account ID
+      QSS3BucketName:
+        default: Quick Start S3 Bucket Name
+      QSS3BucketRegion:
+        default: Quick Start S3 bucket region
+      QSS3KeyPrefix:
+        default: Quick Start S3 Key Prefix
+
+Mappings:
+  InstanceMap:
+    send-data: {"SendAnonymousData": "Yes"}
+
+  # Lambda source code mapping
+#  SourceCode:
+#    General:
+#      S3Bucket: "solutions"
+#      KeyPrefix: "centralized-logging/v3.0.0"
+Conditions:
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
+Resources:
+  #
+  # Log Streamer and Demo resources
+  # [LogStreamerRole, LogStreamer, LogStreamerInvokePermission, DemoStack]
+  #
+  LogStreamerRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: !Sub logstreamer-${AWS::Region}
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+            - Effect: Allow
+              Action:
+              - es:ESHttpPost
+              Resource: !Sub arn:${AWS::Partition}:es:${AWS::Region}:${CentralLogAcct}:domain/*
+            - Effect: Allow
+              Action:
+              - sts:AssumeRole
+              Resource: !Sub ${MasterRole}
+
+  LogStreamer:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Centralized Logging - Lambda function to stream logs cross account on ES Domain
+      Environment:
+        Variables:
+          endpoint: !Sub ${ESDomain}
+      Handler: index.handler
+      Role: !Sub ${LogStreamerRole.Arn}
+      Code:
+        S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+        S3Key: !Sub ${QSS3KeyPrefix}functions/packages/cfnindexscript2/index.zip
+      Runtime: nodejs10.x
+      Timeout: 300
+
+  LogStreamerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub ${LogStreamer}
+      Action: lambda:InvokeFunction
+      Principal: !Sub logs.${AWS::Region}.amazonaws.com
+      SourceAccount: !Sub ${AWS::AccountId}
+
+  #
+  # Solution Helper resources
+  # [SolutionHelperRole, SolutionHelper, SendingAnonymousData, CreateUniqueID]
+  #
+  SolutionHelperRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: Custom_Lambda_Loader_Permissions
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+
+  SolutionHelper:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: solution-helper.lambda_handler
+      Role: !Sub ${SolutionHelperRole.Arn}
+      Description: EFS Backup - This function is a CloudFormation custom lambda resource that generates UUID for each deployment.
+      Code:
+       S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+       S3Key: !Sub ${QSS3KeyPrefix}functions/packages/solution-helper/v3/solution-helper/solution-helper.zip
+      Runtime: python2.7
+      Timeout: 300
+
+  CreateUniqueID:
+    Type: Custom::LoadLambda
+    Properties:
+      ServiceToken: !Sub ${SolutionHelper.Arn}
+      Region: !Sub ${AWS::Region}
+      CreateUniqueID: true
+
+  rCloudTrailTrail:
+    Type: "AWS::CloudTrail::Trail"
+    DependsOn:
+      #- vS3BucketName
+      - rCloudWatchLogGroup
+    Properties:
+      CloudWatchLogsLogGroupArn: !GetAtt rCloudWatchLogGroup.Arn
+      CloudWatchLogsRoleArn: !GetAtt rCloudWatchLogsRole.Arn
+      EnableLogFileValidation: True
+      IncludeGlobalServiceEvents: True
+      IsLogging: True
+      IsMultiRegionTrail: True
+      S3BucketName: !Ref S3BucketName
+      Tags:
+        -
+          Key: Name
+          Value: !Sub ${AWS::StackName}
+      TrailName: !Sub ${AWS::StackName}
+
+  rCloudWatchLogGroup:
+    Type: "AWS::Logs::LogGroup"
+    Properties:
+      LogGroupName: CentralCloudWatchLogGroupNESA
+      RetentionInDays: 365
+  rCloudWatchLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "cloudtrail.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "CloudTrail_CloudWatchLogs_Role"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action: "logs:CreateLogStream"
+                Resource: !Join [ '', [ !GetAtt rCloudWatchLogGroup.Arn, '*' ] ]
+              -
+                Effect: "Allow"
+                Action: "logs:PutLogEvents"
+                Resource: !Join [ '', [ !GetAtt rCloudWatchLogGroup.Arn, '*' ] ]
+  SubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    DependsOn:
+      - rCloudWatchLogGroup
+      - LogStreamer
+    Properties:
+      #RoleArn: !GetAtt LoggingMasterRole.Arn
+      LogGroupName: CentralCloudWatchLogGroupNESA
+      #LogFormat: "Cloud Trail"
+      FilterPattern: ''
+      DestinationArn: !Sub ${LogStreamer.Arn}
+
+Outputs:
+  LambdaArn:
+    Description: Lambda function to index logs on ES Domain
+    Value: !Sub ${LogStreamer.Arn}

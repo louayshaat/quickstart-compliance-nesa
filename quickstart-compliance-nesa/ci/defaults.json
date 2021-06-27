@@ -1,0 +1,34 @@
+[
+    {
+        "ParameterKey": "DBPassword",
+        "ParameterValue": "$[taskcat_genpass_16S]"
+    },
+    {
+        "ParameterKey": "EC2KeyPairBastion",
+        "ParameterValue": "$[taskcat_getkeypair]"
+    },
+    {
+        "ParameterKey": "EC2KeyPair",
+        "ParameterValue": "$[taskcat_getkeypair]"
+    },
+    {
+        "ParameterKey": "AvailabilityZoneA",
+        "ParameterValue": "$[taskcat_getsingleaz_1]"
+    },
+    {
+        "ParameterKey": "AvailabilityZoneB",
+        "ParameterValue": "$[taskcat_getsingleaz_2]"
+    },
+    {
+        "ParameterKey": "VPCTenancy",
+        "ParameterValue": "default"
+    },
+    {
+        "ParameterKey":"QSS3BucketName",
+        "ParameterValue":"$[taskcat_autobucket]"
+    },
+    {
+        "ParameterKey":"QSS3BucketRegion",
+        "ParameterValue":"!Ref QSS3BucketRegion"
+    }
+]
